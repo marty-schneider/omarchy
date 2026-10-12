@@ -7,8 +7,22 @@ source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 ! grep -Fq '${USER}' "$ROOT/bin/omarchy-sudo-passwordless" ||
   fail "passwordless sudo does not interpolate USER into sudoers"
 
-grep -Fq 'id -nG 2>/dev/null' "$ROOT/bin/omarchy-sudo-docker" ||
-  fail "sudoless Docker --configured reads groups of the current euid"
+# A bare id -nG reports this session's groups, fixed at login, so --configured
+# must name the euid's account to see a change made since.
+stub_dir=$(mktemp -d)
+trap 'rm -rf "$stub_dir"' EXIT
+cat >"$stub_dir/id" <<'STUB'
+#!/bin/bash
+case "$*" in
+  -un) echo alice ;;
+  "-nG alice") echo "alice wheel docker" ;;
+  *) echo "alice wheel" ;;
+esac
+STUB
+chmod +x "$stub_dir/id"
+if USER=nobody PATH="$stub_dir:$PATH" "$ROOT/bin/omarchy-sudo-docker" --configured; then
+  fail "sudoless Docker --configured reads the euid account's configured groups"
+fi
 
 for cmd in \
   "$ROOT/bin/omarchy-setup-security-sudoless-docker" \

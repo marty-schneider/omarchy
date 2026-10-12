@@ -13,7 +13,7 @@ if ! getent group input >/dev/null; then
 fi
 
 user=$(id -un)
-if ! id -nG | tr ' ' '\n' | grep -x input >/dev/null; then
+if ! id -nG "$user" | tr ' ' '\n' | grep -x input >/dev/null; then
   echo "Adding $user to the input group. You may need to log out and back in before this applies."
   pkexec usermod -aG input "$user"
 fi

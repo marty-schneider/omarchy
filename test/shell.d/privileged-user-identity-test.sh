@@ -20,9 +20,10 @@ case "$*" in
 esac
 STUB
 chmod +x "$stub_dir/id"
-if USER=nobody PATH="$stub_dir:$PATH" "$ROOT/bin/omarchy-sudo-docker" --configured; then
+status=0
+USER=nobody PATH="$stub_dir:$PATH" "$ROOT/bin/omarchy-sudo-docker" --configured || status=$?
+(( status == 1 )) ||
   fail "sudoless Docker --configured reads the euid account's configured groups"
-fi
 
 for cmd in \
   "$ROOT/bin/omarchy-setup-security-sudoless-docker" \

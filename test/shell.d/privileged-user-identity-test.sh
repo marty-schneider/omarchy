@@ -39,7 +39,10 @@ do
     fail "$(basename "$cmd") does not pass USER to a privileged command"
 done
 
-grep -Fq 'fprintd-enroll "$(id -un)"' "$ROOT/bin/omarchy-setup-security-fingerprint" ||
+fingerprint="$ROOT/bin/omarchy-setup-security-fingerprint"
+grep -Fq 'user=$(id -un)' "$fingerprint" && grep -Fq 'fprintd-enroll "$user"' "$fingerprint" ||
   fail "fingerprint enroll uses id -un"
+grep -Fq 'OMARCHY_INSTALL_USER="$user" "$OMARCHY_PATH/bin/omarchy-apply-lock"' "$fingerprint" ||
+  fail "fingerprint setup configures the lock screen for the enrolled account"
 
 pass "privileged commands take the username from the euid, not USER"
